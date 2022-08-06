@@ -25,7 +25,7 @@ local function toggle_rspec_file()
     return
   end
 
-  local current_dir = vim.fn.expand('%:h')
+  local current_dir = '/' .. vim.fn.expand('%:h')
   local target_dir = nil
   local target_file = nil
 
@@ -57,6 +57,8 @@ local function toggle_rspec_file()
   end
 
   if target_dir and target_file then
+    local target_dir = string.gsub(target_dir, '^/(.*)', '%1')
+
     vim.fn.mkdir(target_dir, 'p')
     vim.api.nvim_command('e ' .. target_dir .. '/' .. target_file)
   else
