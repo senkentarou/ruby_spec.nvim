@@ -67,7 +67,7 @@ local function toggle_rspec_file()
   end
 end
 
-local function run_rspec()
+local function run_rspec(args)
   local current_path = '/' .. vim.fn.expand('%')
 
   if not string.match(current_path, "^.*/spec/.*%.rb$") then
@@ -75,25 +75,27 @@ local function run_rspec()
     return
   end
 
-  local open_term_cmd = 'split | wincmd j | resize 10 | terminal'
   local target_path = string.gsub(current_path, '^/(.*)', '%1')
 
-  vim.api.nvim_command(open_term_cmd .. ' bundle exec rspec ' .. target_path)
+  -- https://github.com/akinsho/toggleterm.nvim integration
+  local open_term_cmd = nil
+  local rspec_cmd = 'bundle exec rspec ' .. target_path
+  if args and args.line then
+    rspec_cmd = rspec_cmd .. ':' .. args.line
+  end
+
+  local has_toggleterm, toggleterm = pcall(require, 'toggleterm')
+  if has_toggleterm then
+    open_term_cmd = 'TermExec cmd="' .. rspec_cmd .. '"'
+  else
+    open_term_cmd = 'split | wincmd j | resize 10 | terminal ' .. rspec_cmd
+  end
+
+  vim.api.nvim_command(open_term_cmd)
 end
 
 local function run_rspec_at_line()
-  local current_path = '/' .. vim.fn.expand('%')
-
-  if not string.match(current_path, "^.*/spec/.*%.rb$") then
-    print('fatal: current path is not /spec/ directory or .rb file.')
-    return
-  end
-
-  local open_term_cmd = 'split | wincmd j | resize 10 | terminal'
-  local current_line = vim.fn.line('.')
-  local target_path = string.gsub(current_path, '^/(.*)', '%1')
-
-  vim.api.nvim_command(open_term_cmd .. ' bundle exec rspec ' .. target_path .. ':' .. current_line)
+  run_rspec({ line = vim.fn.line('.') })
 end
 
 return {
