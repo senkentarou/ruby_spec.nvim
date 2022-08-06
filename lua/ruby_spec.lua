@@ -78,7 +78,7 @@ local function run_rspec()
   local open_term_cmd = 'split | wincmd j | resize 10 | terminal'
   local target_path = string.gsub(current_path, '^/(.*)', '%1')
 
-  vim.api.nvim_command(open_term_cmd .. ' bundle exec rails rspec ' .. target_path)
+  vim.api.nvim_command(open_term_cmd .. ' bundle exec rspec ' .. target_path)
 end
 
 local function run_rspec_at_line()
@@ -93,7 +93,7 @@ local function run_rspec_at_line()
   local current_line = vim.fn.line('.')
   local target_path = string.gsub(current_path, '^/(.*)', '%1')
 
-  vim.api.nvim_command(open_term_cmd .. ' bundle exec rails rspec ' .. target_path .. ':' .. current_line)
+  vim.api.nvim_command(open_term_cmd .. ' bundle exec rspec ' .. target_path .. ':' .. current_line)
 end
 
 return {
