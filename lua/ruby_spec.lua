@@ -68,7 +68,7 @@ local function toggle_rspec_file()
 end
 
 local function run_rspec()
-  local current_path = vim.fn.expand('%')
+  local current_path = '/' .. vim.fn.expand('%')
 
   if not string.match(current_path, "^.*/spec/.*%.rb$") then
     print('fatal: current path is not /spec/ directory or .rb file.')
@@ -76,12 +76,13 @@ local function run_rspec()
   end
 
   local open_term_cmd = 'split | wincmd j | resize 10 | terminal'
+  local target_path = string.gsub(current_path, '^/(.*)', '%1')
 
-  vim.api.nvim_command(open_term_cmd .. ' bundle exec rails rspec ' .. current_path)
+  vim.api.nvim_command(open_term_cmd .. ' bundle exec rails rspec ' .. target_path)
 end
 
 local function run_rspec_at_line()
-  local current_path = vim.fn.expand('%')
+  local current_path = '/' .. vim.fn.expand('%')
 
   if not string.match(current_path, "^.*/spec/.*%.rb$") then
     print('fatal: current path is not /spec/ directory or .rb file.')
@@ -90,8 +91,9 @@ local function run_rspec_at_line()
 
   local open_term_cmd = 'split | wincmd j | resize 10 | terminal'
   local current_line = vim.fn.line('.')
+  local target_path = string.gsub(current_path, '^/(.*)', '%1')
 
-  vim.api.nvim_command(open_term_cmd .. ' bundle exec rails rspec ' .. current_path .. ':' .. current_line)
+  vim.api.nvim_command(open_term_cmd .. ' bundle exec rails rspec ' .. target_path .. ':' .. current_line)
 end
 
 return {
