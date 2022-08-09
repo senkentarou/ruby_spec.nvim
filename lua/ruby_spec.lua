@@ -36,8 +36,12 @@ local function toggle_rspec_file()
       target_dir = string.gsub(current_dir, '^(.-)/spec/requests', '%1/app/controllers')
       target_file = string.gsub(current_file, '%.rb$', '_controller.rb')
     else
-      target_dir = string.gsub(current_dir, '^(.-)/spec', '%1/app')
       target_file = string.gsub(current_file, '_spec%.rb$', '.rb')
+      target_dir = string.gsub(current_dir, '^(.-)/spec/(.-)', '%1/%2')
+
+      if not exists(string.gsub(target_dir, '^/(.*)', '%1')) then
+        target_dir = string.gsub(current_dir, '^(.-)/spec', '%1/app')
+      end
     end
   elseif string.match(current_dir, "/app") then
     -- "controller" file should be opend as "request" spec.
@@ -51,9 +55,8 @@ local function toggle_rspec_file()
       target_file = string.gsub(current_file, '%.rb$', '_spec.rb')
     end
   else
-    -- the other should be open as spec, but now only support under /app/ and /spec/ directory.
-    print('fatal: toggle rspec file now only support under /app and /spec directory.')
-    return
+    target_dir = string.gsub(current_dir, '^(.-)', '%1/spec')
+    target_file = string.gsub(current_file, '%.rb$', '_spec.rb')
   end
 
   if target_dir and target_file then
