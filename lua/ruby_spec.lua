@@ -1,6 +1,6 @@
 local vim = vim
 
-function exists(path)
+local function exists(path)
    local f = io.open(path, "r")
 
    if f ~= nil then
@@ -11,10 +11,25 @@ function exists(path)
   end
 end
 
-local function toggle_rspec_file()
-  -- check .git repository (as root directory)
-  if not exists('.git') then
-    print('fatal: .git repository does not exist.')
+local DEFAULT_OPTIONS = {
+  marker_directory = '.git',
+  rspec_commands = {
+    'bundle',
+    'exec',
+    'rspec'
+  }
+}
+
+local ruby_spec = {}
+
+function ruby_spec.setup(options)
+  vim.g.ruby_spec = vim.tbl_deep_extend('force', DEFAULT_OPTIONS, options)
+end
+
+function ruby_spec.toggle_rspec_file()
+  -- check base marker (as processing root directory)
+  if not exists(vim.g.ruby_spec.marker_directory) then
+    print('fatal: ' .. vim.g.ruby_spec.marker_directory .. ' does not exist in current directory.')
     return
   end
 
@@ -25,85 +40,75 @@ local function toggle_rspec_file()
     return
   end
 
-  local current_dir = '/' .. vim.fn.expand('%:h')
+  local current_dir = vim.fn.expand('%:h')
   local target_dir = nil
   local target_file = nil
 
-  if string.match(current_dir, "/spec") then
-    -- under "requests" directory files should be open as "controller".
-    -- the other files should be opend as it under the "spec" directory.
+  if string.match(current_dir, "^spec") then
+    -- On "spec" directory, "requests" directory files should be open as "controller.rb" file.
+    -- The other files should be opend as it by target: ruby file is under "app" directory or not
     if string.match(current_dir, "/requests") then
-      target_dir = string.gsub(current_dir, '^(.-)/spec/requests', '%1/app/controllers')
+      target_dir = string.gsub(current_dir, '^spec/requests', 'app/controllers')
       target_file = string.gsub(current_file, '%.rb$', '_controller.rb')
     else
-      target_file = string.gsub(current_file, '_spec%.rb$', '.rb')
-      target_dir = string.gsub(current_dir, '^(.-)/spec/(.-)', '%1/%2')
+      target_dir = string.gsub(current_dir, '^spec/?(.*)', '%1')
 
-      if not exists(string.gsub(target_dir, '^/(.*)', '%1')) then
-        target_dir = string.gsub(current_dir, '^(.-)/spec', '%1/app')
+      if not exists(target_dir) then
+        target_dir = 'app/' .. target_dir
       end
+
+      target_file = string.gsub(current_file, '_spec%.rb$', '.rb')
     end
-  elseif string.match(current_dir, "/app") then
-    -- "controller" file should be opend as "request" spec.
-    -- the other files should be opend as it under the "spec" directory.
+  elseif string.match(current_dir, "^app") then
+    -- On "app/" directory, "controller.rb" file should be opend as "request" spec.
+    -- The other files should be opend as it under the "spec" directory.
     if string.match(current_dir, "/controllers") and string.match(current_file, "_controller%.rb$") then
-      target_dir = string.gsub(current_dir, '^(.-)/app/controllers', '%1/spec/requests')
+      target_dir = string.gsub(current_dir, 'app/controllers', 'spec/requests')
       target_file = string.gsub(current_file, '_controller%.rb$', '.rb')
     else
       -- replace base directory to "spec".
-      target_dir = string.gsub(current_dir, '^(.-)/app', '%1/spec')
+      target_dir = string.gsub(current_dir, '^app', 'spec')
       target_file = string.gsub(current_file, '%.rb$', '_spec.rb')
     end
   else
-    target_dir = string.gsub(current_dir, '^(.-)', '%1/spec')
+    -- On the other directory, it should be opend on "/spec" directory and "spec.rb" file.
+    target_dir = 'spec/' .. current_dir
     target_file = string.gsub(current_file, '%.rb$', '_spec.rb')
   end
 
   if target_dir and target_file then
-    local target_dir = string.gsub(target_dir, '^/(.*)', '%1')
-
     vim.fn.mkdir(target_dir, 'p')
     vim.api.nvim_command('e ' .. target_dir .. '/' .. target_file)
   else
-    print('fatal: could not open file...')
+    print('fatal: could not open ' .. target_dir .. '/' .. target_file)
     return
   end
 end
 
-local function run_rspec(args)
-  local current_path = '/' .. vim.fn.expand('%')
+function ruby_spec.run_rspec(args)
+  local target_path = vim.fn.expand('%')
 
-  if not string.match(current_path, "^.*/spec/.*%.rb$") then
-    print('fatal: current path is not /spec/ directory or .rb file.')
+  if not string.match('/' .. target_path, "^.*/spec/.*%.rb$") then
+    print('fatal: current path is not spec/ directory or .rb file.')
     return
   end
 
-  local target_path = string.gsub(current_path, '^/(.*)', '%1')
-
   -- https://github.com/akinsho/toggleterm.nvim integration
-  local open_term_cmd = nil
-  local rspec_cmd = 'bundle exec rspec ' .. target_path
+  local rspec_cmd = table.concat(vim.g.ruby_spec.rspec_commands, ' ') .. ' ' .. target_path
   if args and args.line then
     rspec_cmd = rspec_cmd .. ':' .. args.line
   end
 
   local has_toggleterm, toggleterm = pcall(require, 'toggleterm')
   if has_toggleterm then
-    open_term_cmd = 'TermExec cmd="' .. rspec_cmd .. '"'
+    vim.api.nvim_command('TermExec cmd="' .. rspec_cmd .. '"')
   else
-    open_term_cmd = 'split | wincmd j | resize 10 | terminal ' .. rspec_cmd
+    vim.api.nvim_command('terminal ' .. rspec_cmd)
   end
-
-  vim.api.nvim_command(open_term_cmd)
 end
 
-local function run_rspec_at_line()
-  run_rspec({ line = vim.fn.line('.') })
+function ruby_spec.run_rspec_at_line()
+  ruby_spec.run_rspec({ line = vim.fn.line('.') })
 end
 
-return {
-  toggle_rspec_file = toggle_rspec_file,
-  run_rspec = run_rspec,
-  run_rspec_at_line = run_rspec_at_line
-}
-
+return ruby_spec
