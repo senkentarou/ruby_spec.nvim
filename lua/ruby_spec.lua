@@ -11,6 +11,22 @@ local function exists(path)
   end
 end
 
+local function rspec_command(args)
+  local target_path = vim.fn.expand('%')
+
+  if not string.match('/' .. target_path, "^.*/spec/.*%.rb$") then
+    error('fatal: current path is not spec/ directory or .rb file.')
+  end
+
+  -- https://github.com/akinsho/toggleterm.nvim integration
+  local cmd = table.concat(vim.g.ruby_spec.rspec_commands, ' ') .. ' ' .. target_path
+  if args and args.line then
+    cmd = cmd .. ':' .. args.line
+  end
+
+  return cmd
+end
+
 local DEFAULT_OPTIONS = {
   marker_directory = '.git',
   rspec_commands = {
@@ -29,15 +45,13 @@ end
 function ruby_spec.toggle_rspec_file()
   -- check base marker (as processing root directory)
   if not exists(vim.g.ruby_spec.marker_directory) then
-    print('fatal: ' .. vim.g.ruby_spec.marker_directory .. ' does not exist in current directory.')
-    return
+    error('fatal: ' .. vim.g.ruby_spec.marker_directory .. ' does not exist in current directory.')
   end
 
   local current_file = vim.fn.expand('%:t')
 
   if not string.match(current_file, "%.rb$") then
-    print('fatal: current file is not .rb file.')
-    return
+    error('fatal: current file is not .rb file.')
   end
 
   local current_dir = vim.fn.expand('%:h')
@@ -80,35 +94,34 @@ function ruby_spec.toggle_rspec_file()
     vim.fn.mkdir(target_dir, 'p')
     vim.api.nvim_command('e ' .. target_dir .. '/' .. target_file)
   else
-    print('fatal: could not open ' .. target_dir .. '/' .. target_file)
-    return
+    error('fatal: could not open ' .. target_dir .. '/' .. target_file)
   end
 end
 
 function ruby_spec.run_rspec(args)
-  local target_path = vim.fn.expand('%')
-
-  if not string.match('/' .. target_path, "^.*/spec/.*%.rb$") then
-    print('fatal: current path is not spec/ directory or .rb file.')
-    return
-  end
-
-  -- https://github.com/akinsho/toggleterm.nvim integration
-  local rspec_cmd = table.concat(vim.g.ruby_spec.rspec_commands, ' ') .. ' ' .. target_path
-  if args and args.line then
-    rspec_cmd = rspec_cmd .. ':' .. args.line
-  end
+  local cmd = rspec_command(args)
 
   local has_toggleterm, toggleterm = pcall(require, 'toggleterm')
   if has_toggleterm then
-    vim.api.nvim_command('TermExec cmd="' .. rspec_cmd .. '"')
+    vim.api.nvim_command('TermExec cmd="' .. cmd .. '"')
   else
-    vim.api.nvim_command('terminal ' .. rspec_cmd)
+    vim.api.nvim_command('terminal ' .. cmd)
   end
 end
 
 function ruby_spec.run_rspec_at_line()
   ruby_spec.run_rspec({ line = vim.fn.line('.') })
+end
+
+function ruby_spec.copy_rspec_command(args)
+  local cmd = rspec_command(args)
+
+  vim.api.nvim_command('let @+="' .. cmd .. '"')
+  print('yanked: ' .. cmd)
+end
+
+function ruby_spec.copy_rspec_at_line_command(args)
+  ruby_spec.copy_rspec_command({ line = vim.fn.line('.') })
 end
 
 return ruby_spec
