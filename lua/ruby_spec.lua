@@ -78,7 +78,7 @@ function ruby_spec.toggle_rspec_file()
     -- The other files should be opend as it under the "spec" directory.
     if string.match(current_dir, "/controllers") and string.match(current_file, "_controller%.rb$") then
       target_dir = string.gsub(current_dir, 'app/controllers', 'spec/requests')
-      target_file = string.gsub(current_file, '_controller%.rb$', '.rb')
+      target_file = string.gsub(current_file, '_controller%.rb$', '_spec.rb')
     else
       -- replace base directory to "spec".
       target_dir = string.gsub(current_dir, '^app', 'spec')
