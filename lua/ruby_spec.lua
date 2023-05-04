@@ -1,16 +1,5 @@
 local vim = vim
 
-local function exists(path)
-  local f = io.open(path, "r")
-
-  if f ~= nil then
-    io.close(f)
-    return true
-  else
-    return false
-  end
-end
-
 local function rspec_command(args)
   local target_path = vim.fn.expand('%')
 
@@ -52,22 +41,22 @@ function ruby_spec.toggle_rspec_file()
   local target_dir = nil
   local target_file = nil
 
-  if string.match(current_dir, "^spec") then
-    -- On "spec" directory, "requests" directory files should be open as "controller.rb" file.
+  if string.match(current_dir, "^spec/") then
+    -- On "spec/" directory, "requests" directory files should be open as "controller.rb" file.
     -- The other files should be opend as it by target: ruby file is under "app" directory or not
     if string.match(current_dir, "/requests") then
       target_dir = string.gsub(current_dir, '^spec/requests', 'app/controllers')
-      target_file = string.gsub(current_file, '%.rb$', '_controller.rb')
+      target_file = string.gsub(current_file, '_spec%.rb$', '_controller.rb')
     else
       target_dir = string.gsub(current_dir, '^spec/?(.*)', '%1')
-
-      if not exists(target_dir) then
+      -- Check "app/" directory contents
+      if vim.fn.isdirectory('app/' .. target_dir) > 0 then
         target_dir = 'app/' .. target_dir
       end
 
       target_file = string.gsub(current_file, '_spec%.rb$', '.rb')
     end
-  elseif string.match(current_dir, "^app") then
+  elseif string.match(current_dir, "^app/") then
     -- On "app/" directory, "controller.rb" file should be opend as "request" spec.
     -- The other files should be opend as it under the "spec" directory.
     if string.match(current_dir, "/controllers") and string.match(current_file, "_controller%.rb$") then
@@ -75,7 +64,7 @@ function ruby_spec.toggle_rspec_file()
       target_file = string.gsub(current_file, '_controller%.rb$', '_spec.rb')
     else
       -- replace base directory to "spec".
-      target_dir = string.gsub(current_dir, '^app', 'spec')
+      target_dir = string.gsub(current_dir, '^app/', 'spec/')
       target_file = string.gsub(current_file, '%.rb$', '_spec.rb')
     end
   else
