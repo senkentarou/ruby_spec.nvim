@@ -1,9 +1,9 @@
 local vim = vim
 
 local function exists(path)
-   local f = io.open(path, "r")
+  local f = io.open(path, "r")
 
-   if f ~= nil then
+  if f ~= nil then
     io.close(f)
     return true
   else
@@ -32,8 +32,8 @@ local DEFAULT_OPTIONS = {
   rspec_commands = {
     'bundle',
     'exec',
-    'rspec'
-  }
+    'rspec',
+  },
 }
 
 local ruby_spec = {}
@@ -101,16 +101,13 @@ end
 function ruby_spec.run_rspec(args)
   local cmd = rspec_command(args)
 
-  local has_toggleterm, toggleterm = pcall(require, 'toggleterm')
-  if has_toggleterm then
-    vim.api.nvim_command('TermExec cmd="' .. cmd .. '"')
-  else
-    vim.api.nvim_command('terminal ' .. cmd)
-  end
+  vim.api.nvim_command('terminal ' .. cmd)
 end
 
 function ruby_spec.run_rspec_at_line()
-  ruby_spec.run_rspec({ line = vim.fn.line('.') })
+  ruby_spec.run_rspec({
+    line = vim.fn.line('.'),
+  })
 end
 
 function ruby_spec.copy_rspec_command(args)
@@ -120,8 +117,10 @@ function ruby_spec.copy_rspec_command(args)
   print('yanked: ' .. cmd)
 end
 
-function ruby_spec.copy_rspec_at_line_command(args)
-  ruby_spec.copy_rspec_command({ line = vim.fn.line('.') })
+function ruby_spec.copy_rspec_at_line_command(_)
+  ruby_spec.copy_rspec_command({
+    line = vim.fn.line('.'),
+  })
 end
 
 return ruby_spec
