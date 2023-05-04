@@ -28,7 +28,6 @@ local function rspec_command(args)
 end
 
 local DEFAULT_OPTIONS = {
-  marker_directory = '.git',
   rspec_commands = {
     'bundle',
     'exec',
@@ -43,11 +42,6 @@ function ruby_spec.setup(options)
 end
 
 function ruby_spec.toggle_rspec_file()
-  -- check base marker (as processing root directory)
-  if not exists(vim.g.ruby_spec.marker_directory) then
-    error('fatal: ' .. vim.g.ruby_spec.marker_directory .. ' does not exist in current directory.')
-  end
-
   local current_file = vim.fn.expand('%:t')
 
   if not string.match(current_file, "%.rb$") then
