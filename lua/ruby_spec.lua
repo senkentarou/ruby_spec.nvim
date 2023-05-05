@@ -4,7 +4,8 @@ local function rspec_command(args)
   local target_path = vim.fn.expand('%')
 
   if not string.match('/' .. target_path, "^.*/spec/.*%.rb$") then
-    error('fatal: current path is not spec/ directory or .rb file.')
+    vim.notify('fatal: current path is not spec/ directory or .rb file.', vim.log.levels.ERROR)
+    return
   end
 
   -- https://github.com/akinsho/toggleterm.nvim integration
@@ -34,7 +35,8 @@ function ruby_spec.toggle_rspec_file()
   local current_file = vim.fn.expand('%:t')
 
   if not string.match(current_file, "%.rb$") then
-    error('fatal: current file is not .rb file.')
+    vim.notify('fatal: current file is not .rb file.', vim.log.levels.ERROR)
+    return
   end
 
   local current_dir = vim.fn.expand('%:h')
@@ -77,12 +79,16 @@ function ruby_spec.toggle_rspec_file()
     vim.fn.mkdir(target_dir, 'p')
     vim.api.nvim_command('e ' .. target_dir .. '/' .. target_file)
   else
-    error('fatal: could not open ' .. target_dir .. '/' .. target_file)
+    vim.notify('fatal: could not open ' .. target_dir .. '/' .. target_file, vim.log.levels.ERROR)
   end
 end
 
 function ruby_spec.run_rspec(args)
   local cmd = rspec_command(args)
+
+  if cmd == nil then
+    return
+  end
 
   vim.api.nvim_command('terminal ' .. cmd)
 end
@@ -96,8 +102,12 @@ end
 function ruby_spec.copy_rspec_command(args)
   local cmd = rspec_command(args)
 
+  if cmd == nil then
+    return
+  end
+
   vim.api.nvim_command('let @+="' .. cmd .. '"')
-  print('yanked: ' .. cmd)
+  vim.notify('yanked: ' .. cmd)
 end
 
 function ruby_spec.copy_rspec_at_line_command(_)
